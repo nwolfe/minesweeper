@@ -1,8 +1,18 @@
 (ns minesweeper.core
   (:require [play-clj.core :refer :all]
-            [play-clj.g2d :refer :all]))
+            [play-clj.g2d :refer :all]
+            [play-clj.math :refer :all]))
+
 
 ;; Tiles 128x128
+
+(defn get-entity-at-cursor
+  [screen entities]
+  (let [coords (input->screen screen (input! :get-x) (input! :get-y))]
+    (find-first (fn [{:keys [x y width height] :as entity}]
+                  (-> (rectangle x y width height)
+                      (rectangle! :contains (:x coords) (:y coords))))
+                entities)))
 
 (defscreen main-screen
   :on-show
@@ -11,11 +21,12 @@
     ;; (label "Hello world!" (color :white))
     (let [sheet (texture "minesweeper_tiles.jpg")
           tiles (texture! sheet :split 128 128)]
-      (texture (aget tiles 1 2))
+      (assoc (texture (aget tiles 1 2))
+             :height 128
+             :width 128
+             :x 0
+             :y 0)
       ))
-
-  :on-wtf-man
-  (fn [s v])
 
   :on-render
   (fn [screen entities]
@@ -24,9 +35,10 @@
 
   :on-touch-down
   (fn [screen entities]
-    (println "x =" (game :x))
-    (println "y =" (game :y))
-    ))
+    (let [target (get-entity-at-cursor screen entities)]
+      (clojure.pprint/pprint target)
+      )
+    entities))
 
 (defgame minesweeper
   :on-create
