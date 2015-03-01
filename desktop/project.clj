@@ -14,8 +14,6 @@
                  [org.clojure/clojure "1.6.0"]
                  [play-clj "0.4.4"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/tools.nrepl "0.2.7"]]}}
-
   :source-paths ["src" "src-common"]
   :javac-options ["-target" "1.6" "-source" "1.6" "-Xlint:-options"]
   :aot [minesweeper.core.desktop-launcher]
