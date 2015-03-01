@@ -4,7 +4,6 @@
             [play-clj.math :refer :all]
             [clojure.pprint :as pprint]))
 
-
 ;; Tiles 128x128
 
 (defn get-entity-at-cursor
@@ -29,15 +28,20 @@
    :seven [2 2]
    :eight [2 3]})
 
-(defn ->tile
-  [tile x y]
+(defn ->texture
+  [tile]
   (let [[row col] (get tile-coordinates tile)]
     (-> (texture "minesweeper_tiles.jpg")
         (texture! :split 128 128)
         (aget row col)
-        (texture)
-        (assoc :height 128 :width 128
-               :x x :y y))))
+        (texture))))
+
+(defn ->tile
+  [tile x y]
+  (assoc (->texture tile)
+         :tile tile
+         :height 128 :width 128
+         :x x :y y))
 
 (defscreen main-screen
   :on-show
@@ -55,10 +59,12 @@
 
   :on-touch-down
   (fn [screen entities]
-    (let [target (get-entity-at-cursor screen entities)]
+    (when-let [target (get-entity-at-cursor screen entities)]
       (pprint/pprint target)
-      )
-    entities))
+      (-> (remove (partial = target) entities)
+          (conj (->tile (rand-nth (keys (dissoc tile-coordinates
+                                                (:tile target))))
+                        (:x target) (:y target)))))))
 
 (defgame minesweeper
   :on-create
