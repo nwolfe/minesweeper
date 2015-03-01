@@ -40,11 +40,23 @@
         :eight [2 3]}
        tile))
 
+(def dimensions
+  (let [tile-w 128
+        tile-h 128
+        tile-cols 8
+        tile-rows 8]
+    {:tile-w tile-w
+     :tile-h tile-h
+     :tile-cols tile-cols
+     :tile-rows tile-rows
+     :game-w (* tile-w tile-cols)
+     :game-h (* tile-h tile-rows)}))
+
 (defn ->texture
   [tile]
   (let [[row col] (tile-coordinates tile)]
     (-> (texture "minesweeper_tiles.jpg")
-        (texture! :split 128 128)
+        (texture! :split (:tile-w dimensions) (:tile-w dimensions))
         (aget row col)
         (texture))))
 
@@ -52,8 +64,10 @@
   [tile x y]
   (assoc (->texture tile)
          :tile tile
-         :height 128 :width 128
-         :x x :y y))
+         :height (:tile-h dimensions)
+         :width (:tile-w dimensions)
+         :x x
+         :y y))
 
 (defn get-entity-at-cursor
   [screen entities]
@@ -70,23 +84,13 @@
                           :camera (orthographic)
                           :renderer (stage)
                           :world (box-2d 0 0))
-          tile-w 128
-          tile-h 128
-          tile-cols 8
-          tile-rows 8
-          game-w (* tile-w tile-cols)
-          game-h (* tile-h tile-rows)]
+          {:keys [game-w game-h
+                  tile-w tile-h
+                  tile-cols tile-rows]} dimensions]
 
-      ;; (println "game-w=" game-w)
-      ;; (println "game-h=" game-h)
-      ;; (println "tile-w=" tile-w)
-      ;; (println "tile-h=" tile-h)
-      ;; (println "tile-cols=" tile-cols)
-      ;; (println "tile-rows=" tile-rows)
-
-      ;; set the screen width/height in tiles
       (width! screen game-w)
       (height! screen game-h)
+
       (println (game :width))
       (println (game :height))
 
@@ -95,8 +99,7 @@
              :let [x (* col tile-w)
                    y (+ (* row tile-h)
                         (- game-h (* tile-h tile-rows)))]]
-         (->tile (rand-nth tiles) x y))])
-    )
+         (->tile (rand-nth tiles) x y))]))
 
   :on-render
   (fn [screen entities]
@@ -115,7 +118,8 @@
 
   :on-resize
   (fn [screen entities]
-    ))
+    (height! screen (:game-h dimensions))
+    (width! screen (:game-w dimensions))))
 
 (defgame minesweeper
   :on-create
