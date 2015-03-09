@@ -78,16 +78,10 @@
                 entities)))
 
 (defn generate-board
-  [cols rows mines]
-  [[:one :two :three :four :five :six :seven :eight]
-   [:one :two :three :four :five :bomb :seven :bomb]
-   [:one :two :three :four :five :six :seven :eight]
-   [:one :two :bomb :four :five :six :seven :eight]
-   [:one :two :three :four :five :six :seven :bomb]
-   [:one :two :three :four :bomb :six :seven :eight]
-   [:one :two :three :four :five :six :bomb :eight]
-   [:one :two :three :four :five :six :seven :eight]]
-  )
+  [cols rows bombs]
+  (partition cols (shuffle (take (* cols rows)
+                                 (concat (take bombs (repeat :bomb))
+                                         (repeat :blank))))))
 
 (defscreen main-screen
   :on-show
@@ -112,7 +106,7 @@
              :let [x (* col tile-w)
                    y (+ (* row tile-h)
                         (- game-h (* tile-h tile-rows)))
-                   tile (get (get board row) col)]]
+                   tile (nth (nth board row) col)]]
          (->tile tile x y))]))
 
   :on-render
