@@ -77,6 +77,18 @@
                       (rectangle! :contains (:x coords) (:y coords))))
                 entities)))
 
+(defn generate-board
+  [cols rows mines]
+  [[:one :two :three :four :five :six :seven :eight]
+   [:one :two :three :four :five :bomb :seven :bomb]
+   [:one :two :three :four :five :six :seven :eight]
+   [:one :two :bomb :four :five :six :seven :eight]
+   [:one :two :three :four :five :six :seven :bomb]
+   [:one :two :three :four :bomb :six :seven :eight]
+   [:one :two :three :four :five :six :bomb :eight]
+   [:one :two :three :four :five :six :seven :eight]]
+  )
+
 (defscreen main-screen
   :on-show
   (fn [screen entities]
@@ -86,7 +98,8 @@
                           :world (box-2d 0 0))
           {:keys [game-w game-h
                   tile-w tile-h
-                  tile-cols tile-rows]} dimensions]
+                  tile-cols tile-rows]} dimensions
+          board (generate-board tile-cols tile-rows 4)]
 
       (width! screen game-w)
       (height! screen game-h)
@@ -98,8 +111,9 @@
              row (range tile-rows)
              :let [x (* col tile-w)
                    y (+ (* row tile-h)
-                        (- game-h (* tile-h tile-rows)))]]
-         (->tile (rand-nth tiles) x y))]))
+                        (- game-h (* tile-h tile-rows)))
+                   tile (get (get board row) col)]]
+         (->tile tile x y))]))
 
   :on-render
   (fn [screen entities]
