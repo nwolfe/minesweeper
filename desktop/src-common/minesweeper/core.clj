@@ -1,9 +1,9 @@
 (ns minesweeper.core
-  (:require [play-clj.core :refer :all]
-            [play-clj.g2d :refer :all]
+  (:require [clojure.pprint :refer :all]
+            [play-clj.core :refer :all]
             [play-clj.g2d-physics :refer :all]
-            [play-clj.math :refer :all]
-            [clojure.pprint :as pprint]))
+            [play-clj.g2d :refer :all]
+            [play-clj.math :refer :all]))
 
 ;; Tiles 128x128
 ;; Board 8x8
@@ -11,10 +11,7 @@
 (def ^:const pixels-per-tile 32)
 
 (def tiles
-  [:block
-   :flag
-   :bomb
-   :blank
+  [:blank
    :one
    :two
    :three
@@ -22,22 +19,25 @@
    :five
    :six
    :seven
-   :eight])
+   :eight
+   :unknown
+   :flag
+   :bomb])
 
 (defn tile-coordinates
   [tile]
-  (get {:block [0 0]
-        :flag  [0 1]
-        :bomb  [0 2]
-        :blank [0 3]
-        :one   [1 0]
-        :two   [1 1]
-        :three [1 2]
-        :four  [1 3]
-        :five  [2 0]
-        :six   [2 1]
-        :seven [2 2]
-        :eight [2 3]}
+  (get {:unknown [0 0]
+        :flag    [0 1]
+        :bomb    [0 2]
+        :blank   [0 3]
+        :one     [1 0]
+        :two     [1 1]
+        :three   [1 2]
+        :four    [1 3]
+        :five    [2 0]
+        :six     [2 1]
+        :seven   [2 2]
+        :eight   [2 3]}
        tile))
 
 (def dimensions
@@ -77,11 +77,42 @@
                       (rectangle! :contains (:x coords) (:y coords))))
                 entities)))
 
-(defn generate-board
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; board
+
+(defn board->tile
+  [board col row]
+  (if (and (>= col 0) (>= row 0)
+           (< col (count (first board))) (< row (count board)))
+    (-> board
+        (nth row)
+        (nth col))))
+
+(defn mine-count
+  [board col row]
+  (if (= :bomb (board->tile board col row))
+    :bomb
+    (->> (reduce + (for [i (range -1 2)
+                         j (range -1 2)]
+                     (if (= :bomb (board->tile board (+ col i) (+ row j)))
+                       1
+                       0)))
+         (nth tiles))))
+
+(defn ->board
   [cols rows bombs]
-  (partition cols (shuffle (take (* cols rows)
-                                 (concat (take bombs (repeat :bomb))
-                                         (repeat :blank))))))
+  (->> (take (* cols rows)
+             (concat (take bombs (repeat :bomb))
+                     (repeat :blank)))
+       (shuffle)
+       (partition cols)
+       ((fn [board]
+          (for [row (range rows)]
+            (for [col (range cols)]
+              (mine-count board col row)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; game screens
 
 (defscreen main-screen
   :on-show
@@ -93,7 +124,7 @@
           {:keys [game-w game-h
                   tile-w tile-h
                   tile-cols tile-rows]} dimensions
-          board (generate-board tile-cols tile-rows 4)]
+          board (->board tile-cols tile-rows 4)]
 
       (width! screen game-w)
       (height! screen game-h)
@@ -144,3 +175,61 @@
                             (catch Exception e
                               (.printStackTrace e)
                               (set-screen! minesweeper blank-screen)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; BELOW IS THE BOARD PADDING CODE THAT I SPENT TOO MUCH TIME ON AND I'M
+;; NOT READY TO JUST GET RID OF IT YET...WHAT IF I NEED IT LATER?!? ;)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;; board
+
+;; (defn pad-blanks
+;;   [cols tiles]
+;;   (concat (take cols (repeat :blank))
+;;           tiles
+;;           (take cols (repeat :blank))))
+
+
+;; (defn pad-board
+  ;;   "Takes an MxN board and returns an (M+1)x(N+1)
+  ;;   board with blank tiles around the border.
+
+  ;;   This is necessary to make the tile counting algorithm
+  ;;   work correctly for edge tiles."
+;;   [board]
+;;   (let [cols (count (first board))]
+;;     (map (fn [row]
+;;            (as-> row r
+;;              (vec r)
+;;              (cons :blank r)
+;;              (vec r)
+;;              (conj r :blank)))
+;;          (->> (flatten board)
+;;               (pad-blanks cols)
+;;               (partition cols)))))
+
+;; (defn generate-board
+;;   [cols rows bombs]
+;;   (partition cols (shuffle (take (* cols rows)
+;;                                  (concat (take bombs (repeat :bomb))
+;;                                          (repeat :blank))))))
+;;   (->> (take (* cols rows)
+;;              (concat (take bombs (repeat :bomb))
+;;                      (repeat :blank)))
+;;        (shuffle)
+;;        (partition cols)))
+
+;; (defn board->tile
+;;      [board col row]
+;;      (-> board
+;;          (nth row)
+;;          (nth col)))
+
+;; (defn tile-count
+;;      [board col row]
+;;      (reduce  (for [i (range -1 2)
+;;                     j (range -1 2)]
+;;                 (if (= :bomb (board->tile board ( col i) ( row j)))
+;;                   1
+;;                   0))))
