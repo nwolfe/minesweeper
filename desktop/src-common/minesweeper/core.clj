@@ -22,13 +22,13 @@
    :eight
    :unknown
    :flag
-   :bomb])
+   :mine])
 
 (defn tile-coordinates
   [tile]
   (get {:unknown [0 0]
         :flag    [0 1]
-        :bomb    [0 2]
+        :mine    [0 2]
         :blank   [0 3]
         :one     [1 0]
         :two     [1 1]
@@ -92,19 +92,19 @@
 
 (defn mine-count
   [board col row]
-  (if (= :bomb (board->tile board col row))
-    :bomb
+  (if (= :mine (board->tile board col row))
+    :mine
     (->> (reduce + (for [i (range -1 2)
                          j (range -1 2)]
-                     (if (= :bomb (board->tile board (+ col i) (+ row j)))
+                     (if (= :mine (board->tile board (+ col i) (+ row j)))
                        1
                        0)))
          (nth tiles))))
 
 (defn ->board
-  [cols rows bombs]
+  [cols rows mines]
   (->> (take (* cols rows)
-             (concat (take bombs (repeat :bomb))
+             (concat (take mines (repeat :mine))
                      (repeat :blank)))
        (shuffle)
        (partition cols)
@@ -213,12 +213,12 @@
 ;;               (partition cols)))))
 
 ;; (defn generate-board
-;;   [cols rows bombs]
+;;   [cols rows mines]
 ;;   (partition cols (shuffle (take (* cols rows)
-;;                                  (concat (take bombs (repeat :bomb))
+;;                                  (concat (take mines (repeat :mine))
 ;;                                          (repeat :blank))))))
 ;;   (->> (take (* cols rows)
-;;              (concat (take bombs (repeat :bomb))
+;;              (concat (take mines (repeat :mine))
 ;;                      (repeat :blank)))
 ;;        (shuffle)
 ;;        (partition cols)))
@@ -233,6 +233,6 @@
 ;;      [board col row]
 ;;      (reduce  (for [i (range -1 2)
 ;;                     j (range -1 2)]
-;;                 (if (= :bomb (board->tile board ( col i) ( row j)))
+;;                 (if (= :mine (board->tile board ( col i) ( row j)))
 ;;                   1
 ;;                   0))))
