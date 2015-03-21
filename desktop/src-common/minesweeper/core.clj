@@ -63,13 +63,15 @@
         (texture))))
 
 (defn ->tile
-  [texture tile x y]
+  [texture tile x y row col]
   (assoc texture
          :tile tile
          :height (:tile-h dimensions)
          :width (:tile-w dimensions)
          :x x
-         :y y))
+         :y y
+         :row row
+         :col col))
 
 (defn entity-at-point
   [point entities]
@@ -130,11 +132,65 @@
 ;;    - number then nothing more happens
 ;;    - blank then Reveal all adjacent tiles
 
-(defn reveal-tile
+(defn adjacent-tiles
+  [entities tile]
+  (let [y-top    (+ (:y tile) (:height tile) 5)
+        y-mid    (+ (:y tile) 5)
+        y-bot    (- (:y tile) 5)
+        x-left   (- (:x tile) 5)
+        x-center (+ (:x tile) 5)
+        x-right  (+ (:x tile) (:width tile) 5)]
+    (into #{} [(entity-at-point {:y y-top :x x-left} entities)
+               (entity-at-point {:y y-top :x x-center} entities)
+               (entity-at-point {:y y-top :x x-right} entities)
+               (entity-at-point {:y y-mid :x x-left} entities)
+               (entity-at-point {:y y-mid :x x-right} entities)
+               (entity-at-point {:y y-bot :x x-left} entities)
+               (entity-at-point {:y y-bot :x x-center} entities)
+               (entity-at-point {:y y-bot :x x-right} entities)])))
+
+(defn blank?
   [tile]
-  (assoc tile
-         :object (-> tile :tile ->texture :object)
-         :unknown? false))
+  (= :blank (:tile tile)))
+
+(defn flood-reveal
+  [tile entities]
+  (let [queue (atom [tile])
+        reveal (atom #{tile})]
+    (while (not-empty @queue)
+      (let [adjacent (adjacent-tiles entities (first @queue))]
+        (swap! queue (comp vec rest))
+        (swap! queue into (remove @reveal (filter blank? adjacent)))
+        (swap! reveal into adjacent)))
+    @reveal))
+
+(defn find-revealed
+  [tile entities]
+  (cond
+    (= :mine (:tile tile))
+    #{tile}
+
+    (= :blank (:tile tile))
+    (flood-reveal tile entities)
+
+    :else #{tile}))
+
+(defn reveal-image
+  [entity]
+  (assoc entity :object (-> entity :tile ->texture :object)))
+
+(defn mark-revealed
+  [entity]
+  (assoc entity :unknown? false))
+
+(defn reveal-tile
+  [tile entities]
+  (let [revealed (find-revealed tile entities)]
+    (map (fn [entity]
+           (if (contains? revealed entity)
+             (-> entity reveal-image mark-revealed)
+             entity))
+         entities)))
 
 (defscreen main-screen
   :on-show
@@ -159,7 +215,7 @@
                         (- game-h (* tile-h tile-rows)))
                    tile (nth (nth board row) col)]]
          (-> (->texture :unknown)
-             (->tile tile x y)
+             (->tile tile x y row col)
              (assoc :unknown? true)))]))
 
   :on-render
@@ -171,11 +227,7 @@
   (fn [screen entities]
     (when-let [target (get-entity-at-cursor screen entities)]
       (if (:unknown? target)
-        (map (fn [entity]
-               (if (= entity target)
-                 (reveal-tile entity)
-                 entity))
-             entities))))
+        (reveal-tile target entities))))
 
   :on-resize
   (fn [screen entities]
