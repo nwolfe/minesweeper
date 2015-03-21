@@ -14,7 +14,7 @@ public class IOSLauncher extends IOSApplication.Delegate {
 		IOSApplicationConfiguration config = new IOSApplicationConfiguration();
 		RT.var("clojure.core", "require").invoke(Symbol.intern("minesweeper.core"));
 		try {
-			Game game = (Game) RT.var("minesweeper.core", "minesweeper").deref();
+			Game game = (Game) RT.var("minesweeper.core", "minesweeper-game").deref();
 			return new IOSApplication(game, config);
 		} catch (Exception e) {
 			e.printStackTrace();

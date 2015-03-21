@@ -6,5 +6,5 @@
 
 (defn -main
   []
-  (LwjglApplication. minesweeper "minesweeper" 800 600)
+  (LwjglApplication. minesweeper-game "minesweeper" 800 600)
   (Keyboard/enableRepeatEvents true))

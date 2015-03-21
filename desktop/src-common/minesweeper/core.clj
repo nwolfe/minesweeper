@@ -160,7 +160,7 @@
     (height! screen (:game-h dimensions))
     (width! screen (:game-w dimensions))))
 
-(defgame minesweeper
+(defgame minesweeper-game
   :on-create
   (fn [this]
     (set-screen! this main-screen)))
@@ -174,7 +174,7 @@
                        (try (screen-fn)
                             (catch Exception e
                               (.printStackTrace e)
-                              (set-screen! minesweeper blank-screen)))))
+                              (set-screen! minesweeper-game blank-screen)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

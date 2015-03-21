@@ -11,7 +11,7 @@ public class AndroidLauncher extends AndroidApplication {
 		super.onCreate(savedInstanceState);
           RT.var("clojure.core", "require").invoke(Symbol.intern("minesweeper.core"));
 		try {
-			Game game = (Game) RT.var("minesweeper.core", "minesweeper").deref();
+			Game game = (Game) RT.var("minesweeper.core", "minesweeper-game").deref();
 			initialize(game);
 		} catch (Exception e) {
 			e.printStackTrace();
