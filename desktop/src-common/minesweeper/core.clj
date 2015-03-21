@@ -43,10 +43,12 @@
 (def dimensions
   (let [tile-w 128
         tile-h 128
-        tile-cols 8
-        tile-rows 8]
+        tile-cols 20
+        tile-rows 12
+        mines 20]
     {:tile-w tile-w
      :tile-h tile-h
+     :mines mines
      :tile-cols tile-cols
      :tile-rows tile-rows
      :game-w (* tile-w tile-cols)
@@ -123,8 +125,9 @@
                           :world (box-2d 0 0))
           {:keys [game-w game-h
                   tile-w tile-h
-                  tile-cols tile-rows]} dimensions
-          board (->board tile-cols tile-rows 4)]
+                  tile-cols tile-rows
+                  mines]} dimensions
+          board (->board tile-cols tile-rows mines)]
 
       (width! screen game-w)
       (height! screen game-h)
