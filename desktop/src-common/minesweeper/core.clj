@@ -63,14 +63,13 @@
         (texture))))
 
 (defn ->tile
-  ([tile x y] (->tile tile x y tile))
-  ([tile x y texture]
-   (assoc (->texture texture)
-          :tile tile
-          :height (:tile-h dimensions)
-          :width (:tile-w dimensions)
-          :x x
-          :y y)))
+  [texture tile x y]
+  (assoc texture
+         :tile tile
+         :height (:tile-h dimensions)
+         :width (:tile-w dimensions)
+         :x x
+         :y y))
 
 (defn get-entity-at-cursor
   [screen entities]
@@ -117,6 +116,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; game screens
 
+;; On click, Reveal tile
+;; When a tile is Revealed:
+;;  * change texture
+;;  * change unkown? flag
+;;  * and if it's:
+;;    - bomb then you lose
+;;    - number then nothing more happens
+;;    - blank then Reveal all adjacent tiles
+
+(defn reveal-tile
+  [tile]
+  (assoc tile
+         :object (-> tile :tile ->texture :object)
+         :unknown? false))
+
 (defscreen main-screen
   :on-show
   (fn [screen entities]
@@ -133,31 +147,30 @@
       (width! screen game-w)
       (height! screen game-h)
 
-      (println (game :width))
-      (println (game :height))
-
       [(for [col (range tile-cols)
              row (range tile-rows)
              :let [x (* col tile-w)
                    y (+ (* row tile-h)
                         (- game-h (* tile-h tile-rows)))
                    tile (nth (nth board row) col)]]
-         (assoc (->tile tile x y :unknown)
-                :revealed? false))]))
+         (-> (->texture :unknown)
+             (->tile tile x y)
+             (assoc :unknown? true)))]))
 
   :on-render
   (fn [screen entities]
     (clear!)
     (render! screen entities))
 
-;; (println "target=" (dissoc target :object))
   :on-touch-down
   (fn [screen entities]
     (when-let [target (get-entity-at-cursor screen entities)]
-      (when-not (:revealed? target)
-        (-> (remove (partial = target) entities)
-            (conj (assoc (->tile (:tile target) (:x target) (:y target))
-                         :revealed? true))))))
+      (if (:unknown? target)
+        (map (fn [entity]
+               (if (= entity target)
+                 (reveal-tile entity)
+                 entity))
+             entities))))
 
   :on-resize
   (fn [screen entities]
@@ -179,61 +192,3 @@
                             (catch Exception e
                               (.printStackTrace e)
                               (set-screen! minesweeper-game blank-screen)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; BELOW IS THE BOARD PADDING CODE THAT I SPENT TOO MUCH TIME ON AND I'M
-;; NOT READY TO JUST GET RID OF IT YET...WHAT IF I NEED IT LATER?!? ;)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ;;;; board
-
-;; (defn pad-blanks
-;;   [cols tiles]
-;;   (concat (take cols (repeat :blank))
-;;           tiles
-;;           (take cols (repeat :blank))))
-
-
-;; (defn pad-board
-  ;;   "Takes an MxN board and returns an (M+1)x(N+1)
-  ;;   board with blank tiles around the border.
-
-  ;;   This is necessary to make the tile counting algorithm
-  ;;   work correctly for edge tiles."
-;;   [board]
-;;   (let [cols (count (first board))]
-;;     (map (fn [row]
-;;            (as-> row r
-;;              (vec r)
-;;              (cons :blank r)
-;;              (vec r)
-;;              (conj r :blank)))
-;;          (->> (flatten board)
-;;               (pad-blanks cols)
-;;               (partition cols)))))
-
-;; (defn generate-board
-;;   [cols rows mines]
-;;   (partition cols (shuffle (take (* cols rows)
-;;                                  (concat (take mines (repeat :mine))
-;;                                          (repeat :blank))))))
-;;   (->> (take (* cols rows)
-;;              (concat (take mines (repeat :mine))
-;;                      (repeat :blank)))
-;;        (shuffle)
-;;        (partition cols)))
-
-;; (defn board->tile
-;;      [board col row]
-;;      (-> board
-;;          (nth row)
-;;          (nth col)))
-
-;; (defn tile-count
-;;      [board col row]
-;;      (reduce  (for [i (range -1 2)
-;;                     j (range -1 2)]
-;;                 (if (= :mine (board->tile board ( col i) ( row j)))
-;;                   1
-;;                   0))))
