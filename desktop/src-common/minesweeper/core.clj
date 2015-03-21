@@ -45,7 +45,7 @@
         tile-h 128
         tile-cols 20
         tile-rows 12
-        mines 20]
+        mines 40]
     {:tile-w tile-w
      :tile-h tile-h
      :mines mines
@@ -63,13 +63,14 @@
         (texture))))
 
 (defn ->tile
-  [tile x y]
-  (assoc (->texture tile)
-         :tile tile
-         :height (:tile-h dimensions)
-         :width (:tile-w dimensions)
-         :x x
-         :y y))
+  ([tile x y] (->tile tile x y tile))
+  ([tile x y texture]
+   (assoc (->texture texture)
+          :tile tile
+          :height (:tile-h dimensions)
+          :width (:tile-w dimensions)
+          :x x
+          :y y)))
 
 (defn get-entity-at-cursor
   [screen entities]
@@ -141,22 +142,22 @@
                    y (+ (* row tile-h)
                         (- game-h (* tile-h tile-rows)))
                    tile (nth (nth board row) col)]]
-         (->tile tile x y))]))
+         (assoc (->tile tile x y :unknown)
+                :revealed? false))]))
 
   :on-render
   (fn [screen entities]
     (clear!)
     (render! screen entities))
 
+;; (println "target=" (dissoc target :object))
   :on-touch-down
   (fn [screen entities]
-    (println "game height=" (game :height))
-    (println "game width=" (game :width))
     (when-let [target (get-entity-at-cursor screen entities)]
-      (println "target=" (dissoc target :object))
-      (-> (remove (partial = target) entities)
-          (conj (->tile (rand-nth (remove (partial = (:tile target)) tiles))
-                        (:x target) (:y target))))))
+      (when-not (:revealed? target)
+        (-> (remove (partial = target) entities)
+            (conj (assoc (->tile (:tile target) (:x target) (:y target))
+                         :revealed? true))))))
 
   :on-resize
   (fn [screen entities]
