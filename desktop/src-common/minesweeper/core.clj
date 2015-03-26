@@ -71,13 +71,18 @@
          :x x
          :y y))
 
+(defn entity-at-point
+  [point entities]
+  (find-first (fn [{:keys [x y width height] :as entity}]
+                (-> (rectangle x y width height)
+                    (rectangle! :contains (:x point) (:y point))))
+              entities))
+
 (defn get-entity-at-cursor
   [screen entities]
-  (let [coords (input->screen screen (input! :get-x) (input! :get-y))]
-    (find-first (fn [{:keys [x y width height] :as entity}]
-                  (-> (rectangle x y width height)
-                      (rectangle! :contains (:x coords) (:y coords))))
-                entities)))
+  (-> screen
+      (input->screen (input! :get-x) (input! :get-y))
+      (entity-at-point entities)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; board
