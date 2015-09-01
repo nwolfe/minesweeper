@@ -155,14 +155,16 @@
 
 (defn flood-reveal
   [tile entities]
-  (let [queue (atom [tile])
-        reveal (atom #{tile})]
-    (while (not-empty @queue)
-      (let [adjacent (adjacent-tiles entities (first @queue))]
-        (swap! queue (comp vec rest))
-        (swap! queue into (remove @reveal (filter blank? adjacent)))
-        (swap! reveal into adjacent)))
-    @reveal))
+  (loop [reveal #{tile}
+         queue [tile]]
+    (if (empty? queue)
+      reveal
+      (let [adjacent (adjacent-tiles entities (first queue))]
+        (recur (into reveal adjacent)
+               (into (vec (rest queue))
+                     (->> adjacent
+                          (filter blank?)
+                          (remove reveal))))))))
 
 (defn find-revealed
   [tile entities]
