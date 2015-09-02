@@ -10,6 +10,8 @@
 
 (def ^:const pixels-per-tile 32)
 
+(declare minesweeper-game main-screen)
+
 (def tiles
   [:blank
    :one
@@ -121,16 +123,7 @@
               (mine-count board col row)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;; game screens
-
-;; On click, Reveal tile
-;; When a tile is Revealed:
-;;  * change texture
-;;  * change unkown? flag
-;;  * and if it's:
-;;    - bomb then you lose
-;;    - number then nothing more happens
-;;    - blank then Reveal all adjacent tiles
+;;;; tile reveal
 
 (defn adjacent-tiles
   [entities tile]
@@ -168,14 +161,9 @@
 
 (defn find-revealed
   [tile entities]
-  (cond
-    (= :mine (:tile tile))
-    #{tile}
-
-    (= :blank (:tile tile))
+  (if (blank? tile)
     (flood-reveal tile entities)
-
-    :else #{tile}))
+    #{tile}))
 
 (defn reveal-image
   [entity]
@@ -193,6 +181,9 @@
              (-> entity reveal-image mark-revealed)
              entity))
          entities)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; game screens
 
 (defscreen main-screen
   :on-show
@@ -228,6 +219,8 @@
   :on-touch-down
   (fn [screen entities]
     (when-let [target (get-entity-at-cursor screen entities)]
+      (if (= :mine (:tile target))
+        (set-screen! minesweeper-game main-screen))
       (if (:unknown? target)
         (reveal-tile target entities))))
 
