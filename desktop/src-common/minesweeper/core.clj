@@ -165,22 +165,42 @@
     (flood-reveal tile entities)
     #{tile}))
 
-(defn reveal-image
-  [entity]
-  (assoc entity :object (-> entity :tile ->texture :object)))
-
 (defn mark-revealed
   [entity]
-  (assoc entity :unknown? false))
+  (-> entity
+      (assoc :unknown? false)
+      (assoc :object (-> entity :tile ->texture :object))))
 
 (defn reveal-tile
   [tile entities]
   (let [revealed (find-revealed tile entities)]
     (map (fn [entity]
-           (if (contains? revealed entity)
-             (-> entity reveal-image mark-revealed)
+           (if (and (contains? revealed entity)
+                    (not (:flagged? entity)))
+             (mark-revealed entity)
              entity))
          entities)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; tile flag
+
+(defn toggle-flagged
+  [entity]
+  (if (:flagged? entity)
+    (-> entity
+        (assoc :flagged? false)
+        (assoc :object (-> :unknown ->texture :object)))
+    (-> entity
+        (assoc :flagged? true)
+        (assoc :object (-> :flag ->texture :object)))))
+
+(defn flag-tile
+  [tile entities]
+  (map (fn [entity]
+         (if (= tile entity)
+           (toggle-flagged entity)
+           entity))
+       entities))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; game screens
@@ -219,10 +239,13 @@
   :on-touch-down
   (fn [screen entities]
     (when-let [target (get-entity-at-cursor screen entities)]
-      (if (= :mine (:tile target))
-        (set-screen! minesweeper-game main-screen))
-      (if (:unknown? target)
-        (reveal-tile target entities))))
+      (if (button-pressed? :right)
+        (flag-tile target entities)
+        (when-not (:flagged? target)
+          (if (= :mine (:tile target))
+            (set-screen! minesweeper-game main-screen))
+          (if (:unknown? target)
+            (reveal-tile target entities))))))
 
   :on-resize
   (fn [screen entities]
