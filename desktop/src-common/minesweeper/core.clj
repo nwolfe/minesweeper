@@ -159,10 +159,20 @@
                           (filter blank?)
                           (remove reveal))))))))
 
+(defn mine?
+  [tile]
+  (= :mine (:tile tile)))
+
 (defn find-revealed
   [tile entities]
-  (if (blank? tile)
+  (cond
+    (blank? tile)
     (flood-reveal tile entities)
+
+    (mine? tile)
+    (set (filter mine? entities))
+
+    :else
     #{tile}))
 
 (defn mark-revealed
@@ -242,7 +252,7 @@
       (if (button-pressed? :right)
         (flag-tile target entities)
         (when-not (:flagged? target)
-          (if (= :mine (:tile target))
+          (if (mine? target)
             (set-screen! minesweeper-game main-screen))
           (if (:unknown? target)
             (reveal-tile target entities))))))
