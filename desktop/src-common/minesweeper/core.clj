@@ -142,10 +142,6 @@
                (entity-at-point {:y y-bot :x x-center} entities)
                (entity-at-point {:y y-bot :x x-right} entities)])))
 
-(defn blank?
-  [tile]
-  (= :blank (:tile tile)))
-
 (defn flood-reveal
   [tile entities]
   (loop [reveal #{tile}
@@ -156,21 +152,17 @@
         (recur (into reveal adjacent)
                (into (vec (rest queue))
                      (->> adjacent
-                          (filter blank?)
+                          (filter :blank?)
                           (remove reveal))))))))
-
-(defn mine?
-  [tile]
-  (= :mine (:tile tile)))
 
 (defn find-revealed
   [tile entities]
   (cond
-    (blank? tile)
+    (:blank? tile)
     (flood-reveal tile entities)
 
-    (mine? tile)
-    (set (filter mine? entities))
+    (:mine? tile)
+    (set (filter :mine? entities))
 
     :else
     #{tile}))
@@ -239,7 +231,9 @@
                    tile (nth (nth board row) col)]]
          (-> (->texture :unknown)
              (->tile tile x y row col)
-             (assoc :unknown? true)))]))
+             (assoc :unknown? true)
+             (assoc :blank? (= :blank tile))
+             (assoc :mine? (= :mine tile))))]))
 
   :on-render
   (fn [screen entities]
@@ -255,7 +249,7 @@
         (if (button-pressed? :right)
           (flag-tile target entities)
           (when-not (:flagged? target)
-            (if (mine? target)
+            (if (:mine? target)
               (update! screen :gameover? true))
             (if (:unknown? target)
               (reveal-tile target entities)))))))
