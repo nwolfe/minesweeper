@@ -248,14 +248,17 @@
 
   :on-touch-down
   (fn [screen entities]
-    (when-let [target (get-entity-at-cursor screen entities)]
-      (if (button-pressed? :right)
-        (flag-tile target entities)
-        (when-not (:flagged? target)
-          (if (mine? target)
-            (set-screen! minesweeper-game main-screen))
-          (if (:unknown? target)
-            (reveal-tile target entities))))))
+    (if (:gameover? screen)
+      (do (update! screen :gameover? false)
+          (set-screen! minesweeper-game main-screen))
+      (when-let [target (get-entity-at-cursor screen entities)]
+        (if (button-pressed? :right)
+          (flag-tile target entities)
+          (when-not (:flagged? target)
+            (if (mine? target)
+              (update! screen :gameover? true))
+            (if (:unknown? target)
+              (reveal-tile target entities)))))))
 
   :on-resize
   (fn [screen entities]
