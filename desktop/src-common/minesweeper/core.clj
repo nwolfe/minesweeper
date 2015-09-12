@@ -247,7 +247,8 @@
           (set-screen! minesweeper-game main-screen))
       (when-let [target (get-entity-at-cursor screen entities)]
         (if (button-pressed? :right)
-          (flag-tile target entities)
+          (when (:unknown? target)
+            (flag-tile target entities))
           (when-not (:flagged? target)
             (if (:mine? target)
               (update! screen :gameover? true))
